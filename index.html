@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Real-time Chat App</title>
+  <link rel="stylesheet" href="static/styles.css">
+</head>
+<body>
+  <div class="sidebar">
+    <h3 class="sidebar_heading">Pings</h3>
+    <hr>
+    <div class="add_task">
+      <h3 class="add_task_heading">Assign Task</h3>
+      <form class="add_task_form">
+        <input class="add_task_input" type="text" placeholder="Task description" />
+        <select class="add_task_select" multiple id="userSelection">
+          <script>
+            var users = [];
+            for (var i = 0; i < users.length; i++) {
+              document.write('<option value="' + users[i] + '">' + users[i] + '</option>');
+            }
+          </script>
+        </select>
+        
+        <button class="add_task_button" type="submit">Assign</button>
+      </form>
+      <div class="todo_list">
+        <h3 class="todo_heading">To-Do List</h3>
+        <form class="todo_form">
+          <input class="todo_input" type="text" placeholder="Task description" />
+          <button class="add_task_button" type="submit">Add Task</button>
+        </form>
+        <ul class="todo_items">
+          <!-- Task items will be dynamically added here -->
+        </ul>
+      </div>
+    </div>
+    <ul class="notifs">
+      <li class="notif" id="notif">You joined</li>
+    </ul>
+  </div>
+  <div class="msg">
+    <h3 class="msg_heading">Messages</h3>
+    <ul id="messages">
+      <li><span class="sender">You:</span> Hey, you can send group messages here!</li>
+      <li><span class="sender">You:</span> Just type in the box and hit enter</li>
+    </ul>
+    <form class="msg_form" action="">
+      <input class="msg_input" id="m" autocomplete="off" autofocus="true" placeholder="Type the message and hit enter!" />
+    </form>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+  <!-- <script src="static/script.js"></script> -->
+  <script>
+    var username = prompt("Please enter your name:");
+    if (username) {
+      document.querySelector('.sender').textContent = username + ":";
+    }
+
+    var socket = io();
+    var users = [];
+
+    document.querySelector('form.add_task_form').addEventListener('submit', function(event) {
+      event.preventDefault();
+      var taskDescription = document.querySelector('.add_task_input').value;
+      var assignedUsers = Array.from(document.querySelector('.add_task_select').selectedOptions).map(option => option.value);
+      // Handle task assignment logic here
+      console.log('Task Description:', taskDescription);
+      console.log('Assigned Users:', assignedUsers);
+      document.querySelector('.add_task_input').value = '';
+      document.querySelector('.add_task_select').selectedIndex = -1;
+    });
+
+    socket.on('new user', function(newUser) {
+      users.push(newUser);
+      updateUserSelection();
+      var li = document.createElement('li');
+      li.textContent = newUser + ' joined!';
+      document.querySelector('#notif').appendChild(li);
+
+      // Append the new user to assigning task section
+      var assignTaskSelect = document.getElementById('userSelection');
+      var option = document.createElement('option');
+      option.value = newUser;
+      option.text = newUser;
+      assignTaskSelect.appendChild(option);
+    });
+
+    socket.on('user gone', function() {
+      var li = document.createElement('li');
+      li.textContent = '1 user left!';
+      document.querySelector('#notif').appendChild(li);
+    });
+
+    function updateUserSelection() {
+      var select = document.getElementById('userSelection');
+      select.innerHTML = ''; // Clear existing options
+      for (var i = 0; i < users.length; i++) {
+        var option = document.createElement('option');
+        option.value = users[i];
+        option.text = users[i];
+        select.appendChild(option);
+      }
+    }
+  </script>
+</body>
+</html>
